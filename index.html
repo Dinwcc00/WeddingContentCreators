@@ -35,27 +35,6 @@
     .nav-link { color: var(--ink) !important; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7; transition: 0.2s; }
     .nav-link:hover { opacity: 1; color: var(--accent) !important; }
 
-    /* FLOATING WHATSAPP BUTTON */
-    .floating-wa {
-      position: fixed; bottom: 2rem; right: 2rem; background-color: #25D366; color: white;
-      border-radius: 50px; padding: 0.8rem 1.5rem; font-weight: 600; font-size: 0.95rem;
-      box-shadow: 0 10px 20px -5px rgba(37, 211, 102, 0.4); display: flex; align-items: center; gap: 0.5rem;
-      text-decoration: none; z-index: 1050; transition: all 0.3s ease;
-    }
-    .floating-wa:hover { background-color: #128C7E; color: white; transform: translateY(-3px); box-shadow: 0 15px 25px -5px rgba(37, 211, 102, 0.5); }
-    
-    /* RESPONSIVE UNTUK TELEFON */
-    @media (max-width: 768px) {
-      .floating-wa span { display: none; }
-      .floating-wa { padding: 1rem; border-radius: 50%; bottom: 1.5rem; right: 1.5rem; }
-      .navbar-brand { font-size: 1rem; }
-      
-      /* TAMBAH RUANG PADA FOOTER SUPAYA BUTANG WHATSAPP TIDAK MENUTUPI BUTANG ADMIN */
-      footer {
-        padding-bottom: 6rem !important; 
-      }
-    }
-
     /* HERO */
     .hero { padding: 4rem 0 5rem; position: relative; }
     .hero-text h1 { font-size: clamp(3rem, 5vw, 4.2rem); line-height: 1.05; margin-bottom: 1.5rem; }
@@ -89,7 +68,7 @@
     .cal-day.booked:hover { background-color: var(--accent-hover); }
     .cal-day.booked::after { content: ''; position: absolute; bottom: 5px; width: 4px; height: 4px; border-radius: 50%; background: white; }
 
-    .cal-day.blocked { background-color: var(--blocked); color: var(--blocked-text); text-decoration: line-through; cursor: not-allowed; font-weight: 500; }
+    .cal-day.blocked { background-color: var(--blocked); color: var(--blocked-text); text-decoration: line-through; cursor: pointer; font-weight: 500; }
     .cal-day.blocked::before { content: '\F47A'; font-family: 'bootstrap-icons'; position: absolute; font-size: 1rem; opacity: 0.5; }
 
     .cal-legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -129,6 +108,17 @@
     .form-control, .form-select { border-radius: 12px; padding: 0.8rem 1rem; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 0.95rem; transition: 0.2s; }
     .form-control:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: white; }
     .date-display { background: var(--accent-soft) !important; color: var(--accent-hover) !important; font-weight: 600; cursor: default; }
+
+    /* RESPONSIVE */
+    @media (max-width: 991px) {
+      .hero { padding: 3rem 0; }
+      .hero-text { text-align: center; margin-bottom: 3rem; }
+      .hero-text p { margin: 0 auto 2rem; }
+      .photo-stack { justify-content: center; }
+      .cal-wrapper { padding: 1.5rem; }
+      .cal-grid { gap: 4px; }
+      .cal-day { font-size: 0.85rem; }
+    }
 
     /* ADMIN STYLES */
     .admin-badge {
@@ -344,18 +334,12 @@
   </div>
 </footer>
 
-<!-- Floating WhatsApp -->
-<a href="https://wa.me/601165649243" target="_blank" class="floating-wa" aria-label="WhatsApp">
-  <i class="bi bi-whatsapp fs-4"></i>
-  <span class="d-none d-md-inline">WhatsApp Kami</span>
-</a>
-
-<!-- Modal Tempahan (Isi Borang) -->
+<!-- Modal Tempahan (Isi Borang & Edit) -->
 <div class="modal fade" id="bookingModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title serif">Sahkan Tempahan</h5>
+        <h5 class="modal-title serif" id="modalTitle">Sahkan Tempahan</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form id="bookingForm">
@@ -369,7 +353,8 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">No WhatsApp</label>
-              <input type="tel" class="form-control" name="phone" required placeholder="Cth: 0123456789">
+              <!-- TUKAR KEPADA type="text" SUPAYA BOLEH TYPE SIMBOL '-' DI TELEFON -->
+              <input type="text" class="form-control" name="phone" required placeholder="Cth: 012-3456789">
             </div>
             <div class="col-md-6">
               <label class="form-label">E-mel</label>
@@ -388,6 +373,7 @@
                 <option value="Gold">Gold (RM 300)</option>
                 <option value="Diamond">Diamond (RM 350)</option>
                 <option value="Exclusive">Exclusive (RM 400)</option>
+                <option value="BLOCKED">CUTI / UNAVAILABLE (Admin)</option>
               </select>
             </div>
             <div class="col-md-6">
@@ -417,7 +403,7 @@
   </div>
 </div>
 
-<!-- Modal Butiran Tempahan (Bila Klik Tarikh Booked) -->
+<!-- Modal Butiran Tempahan (Bila Klik Tarikh Booked/Cuti) -->
 <div class="modal fade" id="detailsModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -453,8 +439,9 @@
           </li>
         </ul>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline w-100" data-bs-dismiss="modal">Tutup</button>
+      <div class="modal-footer d-flex justify-content-between gap-2">
+        <button type="button" class="btn btn-outline flex-grow-1" data-bs-dismiss="modal">Tutup</button>
+        <button type="button" class="btn btn-primary flex-grow-1 d-none" id="editBookingBtn"><i class="bi bi-pencil-square me-1"></i> Edit</button>
       </div>
     </div>
   </div>
@@ -477,6 +464,8 @@
   
   let bookings = [];
   let isAdminMode = false;
+  let editMode = false;
+  let currentEditingDate = null;
 
   const monthNames = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
   const dayNames = ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"];
@@ -496,7 +485,7 @@
         isAdminMode = true;
         document.body.classList.add('is-admin');
         renderCalendar();
-        alert("Admin mode diaktifkan! Klik tarikh kosong untuk letak cuti.");
+        alert("Admin mode diaktifkan! Klik tarikh kosong untuk letak cuti, atau klik tarikh booked untuk Edit.");
       } else if (pass !== null) {
         alert("Password salah!");
       }
@@ -564,6 +553,10 @@
         if (isBlocked) {
           el.classList.add('blocked');
           el.title = "Cuti / Unavailable";
+          // Benarkan Admin klik tarikh cuti untuk edit/unblock
+          if (isAdminMode) {
+            el.addEventListener('click', () => openDetailsModal(bookingData, day, currentMonth, currentYear));
+          }
         } else {
           el.classList.add('booked');
           el.title = "Klik untuk lihat butiran";
@@ -597,7 +590,8 @@
       date: dateStr,
       package: "BLOCKED",
       event: "CUTI",
-      location: "-"
+      location: "-",
+      action: "create"
     };
 
     localStorage.setItem('lastActionTime', Date.now());
@@ -644,11 +638,14 @@
      MODAL TEMPAHAN BARU
      ============================================================ */
   const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
+  const form = document.getElementById('bookingForm');
 
   function openBookingModal(dateStr, day, month, year) {
     document.getElementById('inputDate').value = dateStr;
     document.getElementById('displayDate').value = `${day} ${monthNames[month]} ${year}`;
     document.getElementById('alertBox').className = 'alert d-none';
+    document.getElementById('modalTitle').textContent = 'Sahkan Tempahan';
+    document.getElementById('submitBtn').textContent = 'Hantar Tempahan';
     bookingModal.show();
   }
 
@@ -667,46 +664,112 @@
   }
 
   /* ============================================================
-     MODAL BUTIRAN TEMPAHAN
+     MODAL BUTIRAN & EDIT TEMPAHAN
      ============================================================ */
   const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
 
   function openDetailsModal(data, day, month, year) {
+    currentEditingDate = data.date;
+    
     document.getElementById('dDate').textContent = `${day} ${monthNames[month]} ${year}`;
     document.getElementById('dName').textContent = data.name || '-';
-    
-    // Papar No Telefon sebagai teks biasa (TANPA LINK WHATSAPP)
     document.getElementById('dPhone').textContent = data.phone || '-';
-
     document.getElementById('dPackage').textContent = data.package || '-';
     document.getElementById('dEvent').textContent = data.event || '-';
     document.getElementById('dLocation').textContent = data.location || '-';
+
+    const editBtn = document.getElementById('editBookingBtn');
+    if (isAdminMode) {
+      editBtn.classList.remove('d-none');
+      editBtn.onclick = () => openEditBookingModal(data);
+    } else {
+      editBtn.classList.add('d-none');
+    }
+
     detailsModal.show();
   }
 
+  function openEditBookingModal(data) {
+    detailsModal.hide();
+    editMode = true;
+    currentEditingDate = data.date;
+
+    document.getElementById('modalTitle').textContent = 'Kemaskini Tempahan';
+    document.getElementById('submitBtn').textContent = 'Simpan Perubahan';
+
+    document.getElementById('inputDate').value = data.date;
+    const d = new Date(data.date + 'T00:00:00');
+    document.getElementById('displayDate').value = `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+    
+    form.elements['name'].value = data.name || '';
+    form.elements['phone'].value = (data.phone === '-' || data.phone === undefined) ? '' : data.phone;
+    form.elements['email'].value = data.email || '';
+    form.elements['package'].value = data.package || '';
+    form.elements['event'].value = data.event || '';
+    form.elements['location'].value = data.location || '';
+    
+    document.getElementById('alertBox').className = 'alert d-none';
+    form.classList.remove('was-validated');
+    
+    bookingModal.show();
+  }
+
+  document.getElementById('bookingModal').addEventListener('hidden.bs.modal', function () {
+    // Reset state setiap kali modal ditutup
+    editMode = false;
+    currentEditingDate = null;
+    form.reset();
+    form.classList.remove('was-validated');
+    document.getElementById('modalTitle').textContent = 'Sahkan Tempahan';
+    document.getElementById('submitBtn').textContent = 'Hantar Tempahan';
+    document.getElementById('alertBox').className = 'alert d-none';
+  });
+
   /* ============================================================
-     HANTAR BORANG (CLIENT BOOK)
+     HANTAR BORANG (BOOK BARU ATAU KEMASKINI)
      ============================================================ */
-  document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+
     const btn = document.getElementById('submitBtn');
     const alertBox = document.getElementById('alertBox');
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
+    // Buang trim default. Biarkan user type apa yang mereka nak (termasuk '-')
+    data.phone = data.phone.trim();
+    
+    if (editMode) {
+      data.action = 'update';
+    } else {
+      data.action = 'create';
+    }
+
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
-
     localStorage.setItem('lastActionTime', Date.now());
 
-    bookings.push(data);
-
+    // 1. Kemas kini LocalStorage
     let localData = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)) || [];
+    
+    if (editMode) {
+      // Buang rekod lama untuk tarikh ini
+      localData = localData.filter(b => b.date !== currentEditingDate);
+    }
+    
     localData.push(data);
     localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(localData));
-
+    
+    // Update live UI
+    bookings = [...localData];
     renderCalendar();
 
+    // 2. Hantar ke Google Sheets
     try {
       const gsFormData = new FormData();
       for (const key in data) {
@@ -720,25 +783,21 @@
       });
 
       alertBox.className = 'alert alert-success';
-      alertBox.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Tempahan berjaya dihantar!';
-      
-      e.target.reset();
+      alertBox.innerHTML = editMode ? '<i class="bi bi-check-circle-fill me-2"></i> Tempahan berjaya dikemaskini!' : '<i class="bi bi-check-circle-fill me-2"></i> Tempahan berjaya dihantar!';
       
       setTimeout(() => {
         bookingModal.hide();
         btn.disabled = false;
-        btn.innerHTML = 'Hantar Tempahan';
-      }, 2000);
+      }, 1500);
 
     } catch (error) {
       console.error('Ralat:', error);
       alertBox.className = 'alert alert-warning';
-      alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Disimpan di peranti ini. Sila hubungi WhatsApp untuk pengesahan.';
+      alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Disimpan di peranti ini. Tetapi gagal sync ke Google Sheets.';
       
       setTimeout(() => {
         bookingModal.hide();
         btn.disabled = false;
-        btn.innerHTML = 'Hantar Tempahan';
       }, 2000);
     }
   });
