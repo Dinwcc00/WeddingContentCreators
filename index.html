@@ -353,7 +353,6 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">No WhatsApp</label>
-              <!-- type="tel" untuk keypad nombor, maxlength untuk elak taip terlalu panjang -->
               <input type="tel" class="form-control" name="phone" id="phoneInput" required placeholder="Cth: 012-3456789" maxlength="13">
             </div>
             <div class="col-md-6">
@@ -425,7 +424,6 @@
             <span class="text-muted">No. Telefon</span>
             <div class="d-flex align-items-center gap-2">
               <strong id="dPhone" class="text-dark">xxx-xxxxxx</strong>
-              <!-- Butang untuk reveal nombor -->
               <button class="btn btn-outline py-0 px-2" id="showPhoneBtn" style="font-size: 0.7rem; border-radius: 6px;"><i class="bi bi-eye"></i> Lihat</button>
             </div>
           </li>
@@ -467,10 +465,12 @@
   let currentYear = today.getFullYear();
   
   let bookings = [];
-  let isAdminMode = false;
+  let isAdminMode = false;       // Untuk Admin Mode Penuh (Footer)
+  let isPhoneUnlocked = false;   // Untuk buka no telefon sahaja dalam Modal
   let editMode = false;
   let currentEditingDate = null;
   let currentPhoneData = '-';
+  let isTransitioningToEdit = false;
 
   const monthNames = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
   const dayNames = ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"];
@@ -480,14 +480,12 @@
      ============================================================ */
   const phoneInput = document.getElementById('phoneInput');
   phoneInput.addEventListener('input', function (e) {
-    // Buang semua aksara bukan nombor
     let x = this.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,7})/);
-    // Masukkan sengkang selepas 3 digit pertama
     this.value = !x[2] ? x[1] : x[1] + '-' + x[2];
   });
 
   /* ============================================================
-     ADMIN LOGIN
+     ADMIN LOGIN (FOOTER)
      ============================================================ */
   document.getElementById('adminBtn').addEventListener('click', () => {
     if (isAdminMode) {
@@ -679,27 +677,48 @@
   }
 
   /* ============================================================
-     MODAL BUTIRAN & EDIT TEMPAHAN (DENGAN MASK & REVEAL)
+     MODAL BUTIRAN & EDIT TEMPAHAN (ASINGKAN AKSES)
      ============================================================ */
   const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
 
+  // Event Listener: Bila Details Modal ditutup, matikan Admin Mode (kecuali kalau nak pergi ke Edit)
+  document.getElementById('detailsModal').addEventListener('hidden.bs.modal', function () {
+    if (isTransitioningToEdit) {
+      isTransitioningToEdit = false; // Reset flag
+      return; 
+    }
+    
+    // Sama ada admin mode penuh atau cuma unlock phone, kita reset semua.
+    if (isAdminMode) {
+      isAdminMode = false;
+      document.body.classList.remove('is-admin');
+      renderCalendar();
+    }
+    isPhoneUnlocked = false;
+  });
+
   function openDetailsModal(data, day, month, year) {
+    isTransitioningToEdit = false;
+    isPhoneUnlocked = false; // Reset status phone untuk tarikh baru
     currentEditingDate = data.date;
     currentPhoneData = data.phone || '-';
     
     document.getElementById('dDate').textContent = `${day} ${monthNames[month]} ${year}`;
     document.getElementById('dName').textContent = data.name || '-';
     
-    // Sembunyikan nombor telefon jika bukan admin mode
     const phoneElement = document.getElementById('dPhone');
     const showBtn = document.getElementById('showPhoneBtn');
+    const editBtn = document.getElementById('editBookingBtn');
 
+    // Tetapkan Paparan Telefon & Butang Edit
     if (isAdminMode) {
-      // Jika dah login admin, tunjuk terus
+      // Admin penuh: Nombor nampak, Butang Edit nampak
       phoneElement.textContent = currentPhoneData;
       showBtn.classList.add('d-none');
+      editBtn.classList.remove('d-none');
+      editBtn.onclick = () => openEditBookingModal(data);
     } else {
-      // Mask nombor telefon (contoh: 012-xxxxxxx)
+      // Bukan admin: Nombor bertopeng, Butang Edit sorok
       if (currentPhoneData !== '-') {
         let masked = currentPhoneData;
         if (masked.includes('-')) {
@@ -713,20 +732,17 @@
         phoneElement.textContent = '-';
       }
       showBtn.classList.remove('d-none');
+      editBtn.classList.add('d-none'); // Pastikan Edit sentiasa sorok
     }
 
-    // Butang "Lihat" meminta password
+    // Logik Butang "Lihat" (Cuma Dedah No Telefon, TAK munculkan Edit)
     showBtn.onclick = () => {
       let pass = prompt("Masukkan Password Admin untuk lihat nombor penuh:");
       if (pass === CONFIG.ADMIN_PASSWORD) {
         phoneElement.textContent = currentPhoneData;
         showBtn.classList.add('d-none');
-        // Aktifkan admin mode secara automatik
-        if (!isAdminMode) {
-          isAdminMode = true;
-          document.body.classList.add('is-admin');
-          renderCalendar();
-        }
+        isPhoneUnlocked = true; // Tanda nombor dah dibuka
+        // TIDAK SET isAdminMode = true di sini
       } else if (pass !== null) {
         alert("Password salah!");
       }
@@ -736,19 +752,13 @@
     document.getElementById('dEvent').textContent = data.event || '-';
     document.getElementById('dLocation').textContent = data.location || '-';
 
-    const editBtn = document.getElementById('editBookingBtn');
-    if (isAdminMode) {
-      editBtn.classList.remove('d-none');
-      editBtn.onclick = () => openEditBookingModal(data);
-    } else {
-      editBtn.classList.add('d-none');
-    }
-
     detailsModal.show();
   }
 
   function openEditBookingModal(data) {
-    detailsModal.hide();
+    isTransitioningToEdit = true; // Elak Admin Mode mati
+    detailsModal.hide(); 
+    
     editMode = true;
     currentEditingDate = data.date;
 
