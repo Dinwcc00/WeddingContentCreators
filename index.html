@@ -161,6 +161,9 @@
           <a href="https://wa.me/601165649243" target="_blank" class="btn btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.8rem;">
             <i class="bi bi-whatsapp me-1"></i> Hubungi
           </a>
+          <a href="https://tiktok.com/@dinwcc" target="_blank" class="btn btn-outline" style="padding: 0.5rem 1.2rem; font-size: 0.8rem;">
+            <i class="bi bi-tiktok me-1"></i> TikTok
+          </a>
         </li>
       </ul>
     </div>
@@ -205,14 +208,14 @@
           <div class="cal-grid text-start" id="calGrid"></div>
           
           <div class="cal-legend">
-            <span><span class="legend-dot free"></span> Tersedia</span>
-            <span><span class="legend-dot booked"></span> Ditempah</span>
-            <span><span class="legend-dot blocked"></span> Cuti</span>
+            <span><span class="legend-dot free"></span> Available</span>
+            <span><span class="legend-dot booked"></span> Booked</span>
+            <span><span class="legend-dot blocked"></span> Off day</span>
           </div>
 
           <!-- Butang Tarik Data Terbaru -->
           <button class="btn-force-sync" onclick="forceSync()">
-            <i class="bi bi-arrow-clockwise me-1"></i> Tarik Data Terbaru (Sync)
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data (Sync)
           </button>
         </div>
       </div>
@@ -480,8 +483,8 @@
   let currentPhoneData = '-';
   let isTransitioningToEdit = false;
 
-  const monthNames = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
-  const dayNames = ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"];
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   /* ============================================================
      AUTO-DASH UNTUK NO TELEFON
@@ -545,7 +548,7 @@
       calGrid.appendChild(el);
     });
 
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const firstDay = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
     for (let i = 0; i < firstDay; i++) {
@@ -574,13 +577,13 @@
       if (bookingData) {
         if (isBlocked) {
           el.classList.add('blocked');
-          el.title = "Cuti / Unavailable";
+          el.title = "Off day / Unavailable";
           if (isAdminMode) {
             el.addEventListener('click', () => openDetailsModal(bookingData, day, currentMonth, currentYear));
           }
         } else {
           el.classList.add('booked');
-          el.title = "Klik untuk lihat butiran";
+          el.title = "Click to view details";
           el.addEventListener('click', () => openDetailsModal(bookingData, day, currentMonth, currentYear));
         }
       } 
