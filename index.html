@@ -633,8 +633,7 @@
 
       await fetch(CONFIG.SCRIPT_URL, {
         method: 'POST',
-        body: gsFormData,
-        mode: 'no-cors' 
+        body: gsFormData
       });
 
       alert("Tarikh berjaya di-block!");
@@ -790,8 +789,7 @@
 
       await fetch(CONFIG.SCRIPT_URL, {
         method: 'POST',
-        body: gsFormData,
-        mode: 'no-cors'
+        body: gsFormData
       });
     } catch (error) {
       console.error('Ralat padam:', error);
@@ -883,8 +881,7 @@
 
       await fetch(CONFIG.SCRIPT_URL, {
         method: 'POST',
-        body: gsFormData,
-        mode: 'no-cors' 
+        body: gsFormData
       });
 
       alertBox.className = 'alert alert-success';
