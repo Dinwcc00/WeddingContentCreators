@@ -353,8 +353,8 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">No WhatsApp</label>
-              <!-- TUKAR KEPADA type="text" SUPAYA BOLEH TYPE SIMBOL '-' DI TELEFON -->
-              <input type="text" class="form-control" name="phone" required placeholder="Cth: 012-3456789">
+              <!-- type="tel" untuk keypad nombor, maxlength untuk elak taip terlalu panjang -->
+              <input type="tel" class="form-control" name="phone" id="phoneInput" required placeholder="Cth: 012-3456789" maxlength="13">
             </div>
             <div class="col-md-6">
               <label class="form-label">E-mel</label>
@@ -423,7 +423,11 @@
           </li>
           <li class="list-group-item d-flex justify-content-between align-items-center py-3">
             <span class="text-muted">No. Telefon</span>
-            <strong id="dPhone" class="text-dark"></strong>
+            <div class="d-flex align-items-center gap-2">
+              <strong id="dPhone" class="text-dark">xxx-xxxxxx</strong>
+              <!-- Butang untuk reveal nombor -->
+              <button class="btn btn-outline py-0 px-2" id="showPhoneBtn" style="font-size: 0.7rem; border-radius: 6px;"><i class="bi bi-eye"></i> Lihat</button>
+            </div>
           </li>
           <li class="list-group-item d-flex justify-content-between align-items-center py-3">
             <span class="text-muted">Pakej</span>
@@ -466,9 +470,21 @@
   let isAdminMode = false;
   let editMode = false;
   let currentEditingDate = null;
+  let currentPhoneData = '-';
 
   const monthNames = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
   const dayNames = ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"];
+
+  /* ============================================================
+     AUTO-DASH UNTUK NO TELEFON
+     ============================================================ */
+  const phoneInput = document.getElementById('phoneInput');
+  phoneInput.addEventListener('input', function (e) {
+    // Buang semua aksara bukan nombor
+    let x = this.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,7})/);
+    // Masukkan sengkang selepas 3 digit pertama
+    this.value = !x[2] ? x[1] : x[1] + '-' + x[2];
+  });
 
   /* ============================================================
      ADMIN LOGIN
@@ -553,7 +569,6 @@
         if (isBlocked) {
           el.classList.add('blocked');
           el.title = "Cuti / Unavailable";
-          // Benarkan Admin klik tarikh cuti untuk edit/unblock
           if (isAdminMode) {
             el.addEventListener('click', () => openDetailsModal(bookingData, day, currentMonth, currentYear));
           }
@@ -664,16 +679,59 @@
   }
 
   /* ============================================================
-     MODAL BUTIRAN & EDIT TEMPAHAN
+     MODAL BUTIRAN & EDIT TEMPAHAN (DENGAN MASK & REVEAL)
      ============================================================ */
   const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
 
   function openDetailsModal(data, day, month, year) {
     currentEditingDate = data.date;
+    currentPhoneData = data.phone || '-';
     
     document.getElementById('dDate').textContent = `${day} ${monthNames[month]} ${year}`;
     document.getElementById('dName').textContent = data.name || '-';
-    document.getElementById('dPhone').textContent = data.phone || '-';
+    
+    // Sembunyikan nombor telefon jika bukan admin mode
+    const phoneElement = document.getElementById('dPhone');
+    const showBtn = document.getElementById('showPhoneBtn');
+
+    if (isAdminMode) {
+      // Jika dah login admin, tunjuk terus
+      phoneElement.textContent = currentPhoneData;
+      showBtn.classList.add('d-none');
+    } else {
+      // Mask nombor telefon (contoh: 012-xxxxxxx)
+      if (currentPhoneData !== '-') {
+        let masked = currentPhoneData;
+        if (masked.includes('-')) {
+          let parts = masked.split('-');
+          masked = parts[0] + '-xxxxxxx';
+        } else {
+          masked = 'xxx-xxxxxx';
+        }
+        phoneElement.textContent = masked;
+      } else {
+        phoneElement.textContent = '-';
+      }
+      showBtn.classList.remove('d-none');
+    }
+
+    // Butang "Lihat" meminta password
+    showBtn.onclick = () => {
+      let pass = prompt("Masukkan Password Admin untuk lihat nombor penuh:");
+      if (pass === CONFIG.ADMIN_PASSWORD) {
+        phoneElement.textContent = currentPhoneData;
+        showBtn.classList.add('d-none');
+        // Aktifkan admin mode secara automatik
+        if (!isAdminMode) {
+          isAdminMode = true;
+          document.body.classList.add('is-admin');
+          renderCalendar();
+        }
+      } else if (pass !== null) {
+        alert("Password salah!");
+      }
+    };
+
     document.getElementById('dPackage').textContent = data.package || '-';
     document.getElementById('dEvent').textContent = data.event || '-';
     document.getElementById('dLocation').textContent = data.location || '-';
@@ -715,7 +773,6 @@
   }
 
   document.getElementById('bookingModal').addEventListener('hidden.bs.modal', function () {
-    // Reset state setiap kali modal ditutup
     editMode = false;
     currentEditingDate = null;
     form.reset();
@@ -741,9 +798,6 @@
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
-    // Buang trim default. Biarkan user type apa yang mereka nak (termasuk '-')
-    data.phone = data.phone.trim();
-    
     if (editMode) {
       data.action = 'update';
     } else {
@@ -754,22 +808,18 @@
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
     localStorage.setItem('lastActionTime', Date.now());
 
-    // 1. Kemas kini LocalStorage
     let localData = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)) || [];
     
     if (editMode) {
-      // Buang rekod lama untuk tarikh ini
       localData = localData.filter(b => b.date !== currentEditingDate);
     }
     
     localData.push(data);
     localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(localData));
     
-    // Update live UI
     bookings = [...localData];
     renderCalendar();
 
-    // 2. Hantar ke Google Sheets
     try {
       const gsFormData = new FormData();
       for (const key in data) {
