@@ -451,6 +451,7 @@
       <div class="modal-footer d-flex justify-content-between gap-2">
         <button type="button" class="btn btn-outline flex-grow-1" data-bs-dismiss="modal">Tutup</button>
         <button type="button" class="btn btn-primary flex-grow-1 d-none" id="editBookingBtn"><i class="bi bi-pencil-square me-1"></i> Edit</button>
+        <button type="button" class="btn btn-danger flex-grow-1 d-none" id="deleteBookingBtn"><i class="bi bi-trash-fill me-1"></i> Padam</button>
       </div>
     </div>
   </div>
@@ -709,16 +710,19 @@
     const phoneElement = document.getElementById('dPhone');
     const showBtn = document.getElementById('showPhoneBtn');
     const editBtn = document.getElementById('editBookingBtn');
+    const deleteBtn = document.getElementById('deleteBookingBtn');
 
     // Tetapkan Paparan Telefon & Butang Edit
     if (isAdminMode) {
-      // Admin penuh: Nombor nampak, Butang Edit nampak
+      // Admin penuh: Nombor nampak, Butang Edit & Padam nampak
       phoneElement.textContent = currentPhoneData;
       showBtn.classList.add('d-none');
       editBtn.classList.remove('d-none');
       editBtn.onclick = () => openEditBookingModal(data);
+      deleteBtn.classList.remove('d-none');
+      deleteBtn.onclick = () => deleteBooking(data);
     } else {
-      // Bukan admin: Nombor bertopeng, Butang Edit sorok
+      // Bukan admin: Nombor bertopeng, Butang Edit & Padam sorok
       if (currentPhoneData !== '-') {
         let masked = currentPhoneData;
         if (masked.includes('-')) {
@@ -733,6 +737,7 @@
       }
       showBtn.classList.remove('d-none');
       editBtn.classList.add('d-none'); // Pastikan Edit sentiasa sorok
+      deleteBtn.classList.add('d-none'); // Pastikan Padam sentiasa sorok
     }
 
     // Logik Butang "Lihat" (Cuma Dedah No Telefon, TAK munculkan Edit)
@@ -754,6 +759,44 @@
     document.getElementById('dNote').textContent = data.note || '-';
 
     detailsModal.show();
+  }
+
+  /* ============================================================
+     ADMIN: PADAM TEMPAHAN
+     ============================================================ */
+  async function deleteBooking(data) {
+    if (!confirm("Adakah anda pasti ingin PADAM tempahan ini? Tindakan ini tidak boleh dibatalkan.")) {
+      return;
+    }
+
+    localStorage.setItem('lastActionTime', Date.now());
+
+    // Padam dari localStorage
+    let localData = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)) || [];
+    localData = localData.filter(b => b.date !== data.date);
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(localData));
+
+    bookings = [...localData];
+    renderCalendar();
+    detailsModal.hide();
+
+    // Sync padaman ke Google Sheets
+    try {
+      const gsFormData = new FormData();
+      gsFormData.append('action', 'delete');
+      for (const key in data) {
+        gsFormData.append(key, data[key]);
+      }
+
+      await fetch(CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        body: gsFormData,
+        mode: 'no-cors'
+      });
+    } catch (error) {
+      console.error('Ralat padam:', error);
+      alert("Tempahan dipadam di peranti ini. Tetapi gagal sync padaman ke Google Sheets.");
+    }
   }
 
   function openEditBookingModal(data) {
